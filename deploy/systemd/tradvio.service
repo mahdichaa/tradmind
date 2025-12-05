@@ -1,0 +1,42 @@
+[Unit]
+Description=Tradevio FastAPI Backend (Gunicorn)
+After=network.target
+
+[Service]
+# CHANGE THESE PATHS/USER TO MATCH YOUR SERVER
+User=tradvio
+Group=tradvio
+WorkingDirectory=/opt/tradvio/app
+
+# Load environment variables (secrets) from file
+EnvironmentFile=/opt/tradvio/.env
+Environment=PYTHONUNBUFFERED=1
+Environment=CONFIG_DIR=/opt/tradvio/config
+
+# Start Gunicorn with Uvicorn workers, using repo's gunicorn config
+ExecStart=/opt/tradvio/venv/bin/gunicorn -k uvicorn.workers.UvicornWorker -c /opt/tradvio/app/deploy/gunicorn.conf.py main:app
+
+# Restart policy
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# Resource/Hardening (optional, relax if you hit issues)
+# LimitNOFILE=65536
+# PrivateTmp=true
+# NoNewPrivileges=true
+# ProtectSystem=full
+# ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
+
+# Notes:
+# 1) Create app user and paths:
+#    sudo adduser --system --group --home /opt/tradvio tradvio
+#    sudo mkdir -p /opt/tradvio/app /opt/tradvio/config
+#    sudo chown -R tradvio:tradvio /opt/tradvio
+# 2) Put your repo in /opt/tradvio/app and venv in /opt/tradvio/venv.
+# 3) Place your .env in /opt/tradvio/.env with correct DATABASE_URL, SECRET_KEY, etc.
+# 4) Enable and start:
+#    sudo systemctl daemon-reload && sudo systemctl enable --now tradvio && sudo systemctl status tradvio

@@ -1,0 +1,42 @@
+# docker-compose.yml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: tradvio_user
+      POSTGRES_PASSWORD: change-me
+      POSTGRES_DB: tradvio
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tradvio_user -d tradvio"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+    working_dir: /app
+    command: >
+      sh -c "
+        echo '🚀 Starting API server...' &&
+        uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+
+
+
+volumes:
+  pgdata:
